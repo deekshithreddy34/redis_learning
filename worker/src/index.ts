@@ -13,7 +13,8 @@ async function processSubmission(submission:string){
 
     await new Promise(resolve => setTimeout(resolve,1000))
      console.log(`Finished processing submission for problemId ${problemId}.`);
-}
+     client.publish("problem_done",JSON.stringify({problemId,status:"TLE"}))
+        }
 
 async function startWorker(){
     try{
