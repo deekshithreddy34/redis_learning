@@ -1,43 +1,52 @@
+import "dotenv/config";
+import express from "express";
+import { createServer } from "node:http";
+import { WebSocketManager } from "./WebSocketManager.js";
+import { RedisManager } from "./RedisManager.js";
 
-import express from "express"
+const app = express();
+const server = createServer(app);
 
-import {createClient} from "redis"
+app.get("/", (_req, res) => {
+  res.json({
+    message: "WebSocket server is running",
+    websocket: `ws://localhost:${process.env.PORT ?? 8080}`,
+  });
+});
 
-const app=express()
-app.use(express.json())
+const wsManager = new WebSocketManager(server);
+const redisManager = new RedisManager(wsManager);
 
-const client=createClient()
+const PORT = Number(process.env.PORT ?? 8080);
 
-client.on("error",(err)=> console.log("redis client error",err))
+async function startServer() {
+  try {
+    await redisManager.connect();
 
-app.post("/",async(req,res)=>{
-
-    const problemId=req.body.problemId
-    const code=req.body.code;
-    const language=req.body.language;
-
-    try{
-        await client.lPush("problems",JSON.stringify({code,language,problemId}))
-        res.status(200).send("Submission received and stored")
-    }catch(err){
-         console.error("Redis error:", err);
-        res.status(500).send("Failed to store submission.");
-    }
-
-})
-
-
-async function startServer(){
-    try{
-        await client.connect()
-        console.log("redis is connected")
-        app.listen(3000,()=>{
-            console.log("Server is running on port 3000");
-        })
-
-    }catch (error) {
-        console.error("Failed to connect to Redis", error);
-    }
+    server.listen(PORT, () => {
+      console.log(`HTTP server: http://localhost:${PORT}`);
+      console.log(`WebSocket server: ws://localhost:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    await redisManager.disconnect().catch(() => {});
+    await wsManager.close().catch(() => {});
+    process.exitCode = 1;
+  }
 }
 
-startServer();
+async function shutdown() {
+  console.log("Shutting down...");
+
+  await redisManager.disconnect();
+  await wsManager.close();
+
+  server.close(() => {
+    process.exit(0);
+  });
+}
+
+process.once("SIGINT", () => void shutdown());
+process.once("SIGTERM", () => void shutdown());
+
+void startServer();

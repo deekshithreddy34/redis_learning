@@ -1,5 +1,5 @@
 import { createClient } from "redis";
-import { WebSocketManager } from "./WebSocketManager.ts";
+import { WebSocketManager } from "./WebSocketManager.js";
 
 type UserEvent={
     userId:string;
