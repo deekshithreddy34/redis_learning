@@ -9,11 +9,14 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  
   "type": "module",
   "dependencies": {
     "@types/express": "^5.0.6",
     "express": "^5.3.0",
-    "redis": "^6.3.0"
+    "redis": "^6.3.0",
+    "ws": "^8.22.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.2"
   }
 }
